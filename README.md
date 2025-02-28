@@ -32,25 +32,16 @@ Ensure you have all the following files in one directory before running the proj
 Once all the files are in place, install required Python libraries using:  
 ```bash
 pip install -r requirements.txt
-
-3️⃣ Set up Gmail API
+```
+###3️⃣ Set up Gmail API
 Go to Google Cloud Console → Create a Project
 Enable Gmail API
 Download client_secret.json (OAuth Credentials)
 Place client_secret.json inside your project directory
 Authenticate your Gmail account:
-bash
-Copy
-Edit
+```bash
 python gmailapi.py
-Follow the authentication steps in the browser.
-▶️ Usage
-Once everything is set up, start monitoring emails by running:
-
-bash
-Copy
-Edit
-python gmailapi.py
+```
 The script will:
 
 Fetch new emails
@@ -58,8 +49,7 @@ Summarize them
 Suggest AI-powered replies
 Show a desktop notification
 If no new emails are found, the script will wait and check again.
-
-📦 Dependencies
+###📦 Dependencies
 This project requires the following Python libraries (included in requirements.txt):
 
 google-auth, google-auth-oauthlib, google-api-python-client (For Gmail API)
@@ -69,22 +59,22 @@ beautifulsoup4 (For HTML parsing)
 plyer (For desktop notifications)
 To install all dependencies:
 
-bash
-Copy
-Edit
+```bash
 pip install -r requirements.txt
-⚠️ Important Notes
+```
+###⚠️ Important Notes
 Remove API keys from the script before pushing to GitHub.
 The project currently supports Gmail accounts only.
 The BART model may take a few seconds depending on email length.
 The script fetches only the latest email (modify fetch_latest_email() to change this).
-🎯 Future Improvements
+###🎯 Future Improvements
 🔹 Multi-email support: Fetch multiple emails at once
 🔹 Better reply suggestions: More personalized responses
 🔹 Email sentiment analysis: Classify emails as urgent, neutral, or low-priority
 🔹 Automatic email categorization
 
-👨‍💻 Author
+###👨‍💻 Author
 Developed by Sanika 🚀
-⭐ Contributions
-Feel free to fork, improve, and create pull reques
+
+###⭐ Contributions
+Feel free to fork, improve, and create pull requests!
