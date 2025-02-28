@@ -1,0 +1,12 @@
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+numpy
+torch
+transformers
+nltk
+plyer
+beautifulsoup4
+scikit-learn
+requests
