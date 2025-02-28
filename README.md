@@ -55,6 +55,28 @@ If no new emails are found, the script will wait and check again.
 
 ---
 
+## 🖥️ Tech Stack  
+This project leverages the following technologies:  
+
+- **Large Language Models (LLMs):**
+  - **Facebook BART (Hugging Face Transformers)** for email summarization  
+  - **Google Gemini AI** for generating smart email replies  
+
+- **APIs & Authentication:**
+  - **Gmail API** (Google API Client) for fetching emails  
+  
+- **Text Processing & NLP:**
+  - `nltk`, `scikit-learn` for natural language processing  
+  - `beautifulsoup4` for HTML parsing  
+
+- **Machine Learning & Deep Learning:**
+  - `numpy`, `torch`, `transformers` for AI model operations  
+
+- **System Notifications:**
+  - `plyer` for sending desktop notifications  
+
+---
+
 ## 📦 Dependencies  
 This project requires the following Python libraries (included in `requirements.txt`):  
 
@@ -94,3 +116,4 @@ Developed by **Sanika** 🚀
 
 ## ⭐ Contributions  
 Feel free to **fork, improve, and create pull requests!**
+
