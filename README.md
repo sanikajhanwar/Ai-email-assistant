@@ -1,14 +1,6 @@
-# 📬 AI Email Assistant (Demo)
+# AI Email Assistant 📬
 
-This AI assistant fetches, summarizes, and suggests replies for Gmail emails.  
-🚀 Deployed in Demo Mode on Streamlit Cloud.
-
-### 🔍 Features
-- Email summarization using BART
-- Smart reply generation using Gemini
-- Demo emails with sender/date/summary/replies
-
-### 🧠 Tech Stack
-- Streamlit
-- HuggingFace Transformers (BART)
-- Google Gemini API
+An intelligent assistant that:
+- Summarizes Gmail emails using BART
+- Suggests replies using Gemini
+- Built with Python + Streamlit
