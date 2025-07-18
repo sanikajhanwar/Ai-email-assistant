@@ -24,6 +24,28 @@ nltk.download('stopwords')
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 LAST_CHECKED_ID = None  # Stores the last email ID to prevent duplicate notifications
 
+# DEMO EMAIL FALLBACK
+DEMO_EMAILS = [
+    {
+        "sender": "Product Team <demo@example.com>",
+        "date": "Thu, 18 Jul 2024 14:20:00 +0530",
+        "text": "Hey Sanika, we're excited to inform you about our new feature updates including personalized dashboards, faster load times, and dark mode support. Stay tuned for more!",
+        "id": "demo_1"
+    },
+    {
+        "sender": "College <admissions@university.edu>",
+        "date": "Wed, 17 Jul 2024 09:30:00 +0530",
+        "text": "Dear Student, This is a reminder that the deadline for project submission is 20th July. Please ensure all documents are uploaded via the portal.",
+        "id": "demo_2"
+    },
+    {
+        "sender": "Hackathon Team <noreply@event.com>",
+        "date": "Tue, 16 Jul 2024 17:10:00 +0530",
+        "text": "Hi Sanika, Thanks for registering for HackRush 2024. The opening ceremony is on July 22nd at 10 AM. Team details will be shared soon.",
+        "id": "demo_3"
+    }
+]
+
 # Function to authenticate Gmail API
 def authenticate_gmail():
     creds = None
@@ -53,28 +75,57 @@ def extract_email_text(payload):
                 if mime_type == "text/html" and not email_text:
                     soup = BeautifulSoup(decoded_data, "html.parser")
                     email_text = soup.get_text(separator="\n").strip()
-    # Remove excessive blank spaces
     return re.sub(r'\s+', ' ', email_text).strip() if email_text else "⚠️ No readable email content found."
 
-# Fetch latest email
-def fetch_latest_email():
-    global LAST_CHECKED_ID
+def fetch_latest_email(use_demo=False):
+    if use_demo:
+        email = DEMO_EMAILS[0]
+        return email["sender"], email["date"], email["text"], email["id"]
+
     service = authenticate_gmail()
     results = service.users().messages().list(userId='me', labelIds=['INBOX'], q="category:primary", maxResults=1).execute()
     messages = results.get("messages", [])
+
     if not messages:
         return None, None, None, None
-    message_id = messages[0]["id"]
-    if message_id == LAST_CHECKED_ID:
-        return None, None, None, None  # No new emails
-    LAST_CHECKED_ID = message_id
-    message = service.users().messages().get(userId='me', id=message_id, format="full").execute()
-    payload = message.get("payload", {})
-    headers = message.get("payload", {}).get("headers", [])
+
+    msg_data = service.users().messages().get(userId='me', id=messages[0]['id'], format='full').execute()
+    payload = msg_data.get("payload", {})
+    headers = payload.get("headers", [])
     email_text = extract_email_text(payload)
     sender = next((h["value"] for h in headers if h["name"] == "From"), "Unknown Sender")
     date = next((h["value"] for h in headers if h["name"] == "Date"), "Unknown Date")
-    return sender, date, email_text, message_id
+    return sender, date, email_text, messages[0]["id"]
+
+
+# Fetch recent emails (real or demo based on mode)
+def fetch_top_k_emails(k=3, query_filter=None, use_demo=False):
+    if use_demo:
+        return DEMO_EMAILS[:k]
+
+    service = authenticate_gmail()
+    query = "category:primary"
+    if query_filter:
+        query += f" {query_filter}"
+
+    results = service.users().messages().list(userId='me', labelIds=['INBOX'], q=query, maxResults=k).execute()
+    messages = results.get("messages", [])
+
+    emails = []
+    for msg in messages:
+        msg_data = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
+        payload = msg_data.get("payload", {})
+        headers = msg_data.get("payload", {}).get("headers", [])
+        email_text = extract_email_text(payload)
+        sender = next((h["value"] for h in headers if h["name"] == "From"), "Unknown Sender")
+        date = next((h["value"] for h in headers if h["name"] == "Date"), "Unknown Date")
+        emails.append({
+            "sender": sender,
+            "date": date,
+            "text": email_text,
+            "id": msg["id"]
+        })
+    return emails
 
 # Summarize email using BART
 def summarize_email_bart(email_text):
@@ -88,52 +139,61 @@ def summarize_email_bart(email_text):
 # Configure Gemini AI API (REMOVE KEY BEFORE USING)
 genai.configure(api_key="AIzaSyAB0960f4CkcapfdEZpsLMFvFhyoyAbQaE")
 
-def generate_email_reply(email_summary):
-    """Generates AI-powered reply suggestions using Google's Gemini AI."""
+def generate_email_reply(email_summary, sender_email):
+    if "no-reply" in sender_email.lower() or "noreply" in sender_email.lower():
+        return "⚠️ This is a no-reply email. No response required."
+
     prompt = f"""
     Based on the following email summary, provide only 3 short professional replies.
     Do not include any other text.
 
     Email Summary:
     {email_summary}
-    
+
     Suggested Replies:
     1.
     2.
     3.
     """
     model = genai.GenerativeModel(model_name="gemini-1.5-flash")
-    response = model.generate_content(prompt)
-    return response.text.strip() if response else "⚠️ No response generated."
+    response = model.generate_content(prompt, stream=True)
+
+    collected = []
+    for chunk in response:
+        if chunk.text:
+            collected.append(chunk.text)
+    return ''.join(collected).strip() if collected else "⚠️ No response generated."
 
 # Show desktop notification
 def notify_new_email(sender, date, summary):
-    """Displays a system notification when a new email arrives."""
     notification_title = f"📩 New Email from {sender}"
-    notification_message = f"📅 {date}\n🔍 Summary: {summary[:200]}..."  # Trim to avoid crashes
+    notification_message = f"📅 {date}\n🔍 Summary: {summary[:200]}..."
     notification.notify(
         title=notification_title,
         message=notification_message,
         timeout=20
     )
 
-# Main script to monitor emails continuously
+# Run as script to test locally
 if __name__ == "__main__":
     print("🔍 Monitoring Gmail for new emails...")
     MAX_RUNS = 1
     run_count = 0
     while run_count < MAX_RUNS:
-        sender, date, email_text, email_id = fetch_latest_email()
-        if email_text:
-            print(f"\n📩 New Email from: {sender}")
-            print(f"📅 Received at: {date}")
-            print("📌 Summary:")
-            summary = summarize_email_bart(email_text)
-            print(summary)
-            print("\n✉️ Suggested Replies:")
-            reply_suggestions = generate_email_reply(summary)
-            print(reply_suggestions)
-            notify_new_email(sender, date, summary)
+        emails = fetch_top_k_emails(k=1, use_demo=False)
+        if not emails:
+            print("❌ No new email.")
+            break
+        email = emails[0]
+        print(f"\n📩 New Email from: {email['sender']}")
+        print(f"📅 Received at: {email['date']}")
+        print("📌 Summary:")
+        summary = summarize_email_bart(email['text'])
+        print(summary)
+        print("\n✉️ Suggested Replies:")
+        reply_suggestions = generate_email_reply(summary, email['sender'])
+        print(reply_suggestions)
+        notify_new_email(email['sender'], email['date'], summary)
         run_count += 1
-        time.sleep(10)  # Check every 60 seconds
+        time.sleep(10)
     print("✅ Stopping email monitoring.")
