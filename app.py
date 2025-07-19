@@ -23,7 +23,7 @@ with center_col:
         To use this mode:
         - You must run the app locally on your machine
         - A browser window will open for Gmail login
-        - Make sure your `credentials.json` is properly set up
+        - Make sure your credentials.json is properly set up
         \n\n
         ❌ This won't work on Streamlit Cloud because Google login can't happen on shared servers.
         """)
@@ -62,7 +62,7 @@ with center_col:
 
             if email_text:
                 st.success("Email fetched!")
-                st.markdown(f"**From:** `{sender}`  \\n**Date:** `{date}`")
+                st.markdown(f"**From:** {sender}  \\n**Date:** {date}")
 
                 st.markdown("#### 📈 Email Content")
                 st.code(email_text)
